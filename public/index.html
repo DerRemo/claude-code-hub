@@ -1731,7 +1731,7 @@
     }
 
     .project-toast {
-      position: fixed; bottom: var(--space-5); left: 50%;
+      position: fixed; bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); left: 50%;
       transform: translateX(-50%) translateY(20px);
       background: var(--bg-elevated); color: var(--text-primary);
       border: 1px solid var(--red); border-radius: var(--radius-sm);
@@ -4440,7 +4440,7 @@
     .file-create-row .rename-input { flex: 1; }
 
     /* ── Approval stack (Task 7) ─────────────────────────────── */
-    .approval-stack { position: fixed; right: 16px; bottom: 16px; z-index: 320;
+    .approval-stack { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 320;
       display: flex; flex-direction: column; gap: 10px; max-width: min(92vw, 420px); }
     .approval-card { background: var(--bg-card, #14161b); border: 1px solid var(--accent, #2dd4bf);
       border-radius: 10px; padding: 12px 14px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
@@ -4455,7 +4455,7 @@
 
     /* ── Upload toast stack (Task 13) ────────────────────────── */
     .upload-toast-stack {
-      position: fixed; right: 16px; bottom: 16px; z-index: 250;
+      position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 250;
       display: flex; flex-direction: column; gap: 8px;
       max-width: 320px;
     }
