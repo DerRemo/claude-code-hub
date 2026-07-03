@@ -98,6 +98,7 @@ window.__I18N_BUNDLES.de = {
 
   // Session card — dormant metadata
   'sessionCard.lastSeen': 'Zuletzt gesehen: {time}',
+  'sessionCard.contextPct': '{pct}% Kontext',
 
   // Terminal toolbar buttons
   'terminal.toolbar.backAria': 'Zurück zum Dashboard',

@@ -581,6 +581,10 @@
       flex-direction: column;
       gap: 2px;
       overflow-y: auto;
+      /* Keep touch scrolling inside the drawer — otherwise the swipe chains to
+         the page behind and scrolls the overview instead of the sidebar. */
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       z-index: 50;
     }
 
@@ -814,10 +818,19 @@
       .sidebar {
         position: fixed;
         left: 0;
+        /* Align the drawer with the slimmed mobile header (52px, below). */
+        top: calc(52px + env(safe-area-inset-top));
+        height: calc(100dvh - 52px - env(safe-area-inset-top));
         width: min(280px, 80vw);
         transform: translateX(-100%);
         transition: transform var(--dur) var(--ease-out);
         box-shadow: var(--shadow-lg);
+        /* As an off-canvas drawer the sidebar overlays the main content, so the
+           translucent+blur desktop surface bleeds the content through and text
+           overlaps. Force an opaque surface for readability. */
+        background: var(--bg-surface);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
       }
       body[data-sidebar-open="true"] .sidebar {
         transform: translateX(0);
@@ -835,7 +848,9 @@
          Hamburger und Titel und bringt null Info), Gaps eng. */
       .header .logo-mark { display: none; }
       .header .logo-text { font-size: 15px; }
-      .header { gap: var(--space-2); padding-left: max(var(--space-3), env(safe-area-inset-left)); padding-right: max(var(--space-3), env(safe-area-inset-right)); }
+      /* Slimmer top bar on mobile — the 64px desktop height left a big empty
+         band above the view title. Sidebar drawer top/height match this. */
+      .header { height: calc(52px + env(safe-area-inset-top)); gap: var(--space-2); padding-left: max(var(--space-3), env(safe-area-inset-left)); padding-right: max(var(--space-3), env(safe-area-inset-right)); }
     }
 
     /* ── View Container ───────────────────────────────────────────── */
@@ -1375,9 +1390,12 @@
     .project-card-name {
       font-family: var(--font-mono); font-weight: 600; font-size: var(--text-base);
       color: var(--text-primary);
-      display: flex; align-items: center; gap: var(--space-2); min-width: 0;
+      display: flex; align-items: center; gap: var(--space-2); min-width: 0; flex: 1 1 auto;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* text-overflow:ellipsis is inert on the flex container above, so the name
+       would hard-clip against the status badge. Truncate on an inner text run. */
+    .project-card-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     .project-card-glyph {
       width: 18px; height: 18px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
@@ -1784,6 +1802,16 @@
       flex: 1;
       overflow-y: auto;
       padding: 32px max(24px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+    }
+    /* On phones the single-row toolbar squeezes the title into a 3-line wrap and
+       pushes the action buttons off-screen. Stack it: title row (truncating) on
+       top, action buttons in a horizontally scrollable row below. */
+    @media (max-width: 640px) {
+      .detail-toolbar { flex-direction: column; align-items: stretch; gap: var(--space-2); }
+      .detail-toolbar-left { min-width: 0; }
+      .detail-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .detail-toolbar-right { overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; }
+      .detail-toolbar-right .btn { flex-shrink: 0; }
     }
 
     /* ── Attention-Flash: 2s Peak-Animation direkt bei eingehendem
@@ -3004,9 +3032,17 @@
     .touch-bar::-webkit-scrollbar { display: none; }
 
     @media (pointer: coarse) {
-      body[data-current-view="terminal"] .touch-bar { display: flex; }
-      body[data-current-view="terminal"] .terminal-view {
-        padding-bottom: calc(44px + env(safe-area-inset-bottom));
+      /* Touch-bar is a keyboard accessory — only show it while the software
+         keyboard is up (data-kb-open set by updateKeyboardInset). Otherwise it
+         just steals terminal space. Reserve its 44px only when it's shown. */
+      body[data-kb-open="true"][data-current-view="terminal"] .touch-bar { display: flex; }
+      body[data-kb-open="true"][data-current-view="terminal"] .terminal-view {
+        /* Reserve EXACTLY the touch-bar height (44px). The bar sits on the
+           keyboard top (bottom: kb-inset), which already covers the home
+           indicator, so adding safe-area-inset-bottom here would over-reserve
+           and leave a grey strip above the bar on iPhones that still report a
+           non-zero bottom inset while the keyboard is up. */
+        padding-bottom: 44px;
       }
       /* App-Header in Terminal-View auf Mobile verstecken — Back-Button
          und Session-Name sind bereits in der .terminal-toolbar.
@@ -3029,6 +3065,18 @@
       /* Touch: nahezu full-bleed — jeder Pixel zählt mit Touch-Bar + Tastatur. */
       body[data-current-view="terminal"] .terminal-layout { gap: 0; padding: 0; }
       body[data-current-view="terminal"] .terminal-container { border-radius: 0; box-shadow: none; }
+    }
+
+    /* Phones: the 8-icon action group can't share one line with the session
+       name without crushing it to "a…". Stack — back + name on row 1 (readable),
+       actions on a horizontally scrollable row 2. iPad (>640) keeps one row. */
+    @media (pointer: coarse) and (max-width: 640px) {
+      body[data-current-view="terminal"] .terminal-toolbar-left { flex: 1 0 100%; min-width: 0; }
+      body[data-current-view="terminal"] .terminal-toolbar-right {
+        flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      }
+      body[data-current-view="terminal"] .terminal-toolbar-right::-webkit-scrollbar { display: none; }
     }
 
     .touch-key {
@@ -3118,9 +3166,10 @@
 
     /* ── Responsive ───────────────────────────────────────────────── */
     @media (max-width: 768px) {
-      .container { padding: 20px max(16px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+      .container { padding: 10px max(16px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
       .sessions-grid { grid-template-columns: 1fr; }
       .header { padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
+      .app-topbar { padding: var(--space-2) 0; gap: var(--space-3); }
       .search-wrapper { max-width: none; flex: 1 1 100%; }
 
       /* Terminal-Toolbar auf Mobile: platzsparende Zwei-Reihen-Anordnung.
@@ -3149,10 +3198,6 @@
       .terminal-container { border-radius: var(--radius-md); }
     }
 
-    @media (max-width: 480px) {
-      /* Header auf sehr kleinen Screens: Logo-Text ausblenden damit Header-Buttons reinpassen */
-      .logo-text { display: none; }
-    }
 
     /* ── Mobile-Härtung: Touch-Targets ≥44px (coarse-pointer) ──────────
        Interaktive Klein-Controls auf Fingergröße. Gezielt, nicht global —
@@ -6479,7 +6524,7 @@
               <div class="project-card-head">
                 <span class="project-card-name">
                   ${p.pinned ? `<span class="project-pin-dot" aria-label="${t('projects.pinned')}" title="${t('projects.pinned')}">📌</span>` : ''}
-                  <span class="project-card-glyph" aria-hidden="true">▸</span>${escapeHtml(p.displayName)}
+                  <span class="project-card-glyph" aria-hidden="true">▸</span><span class="project-card-name-text">${escapeHtml(p.displayName)}</span>
                 </span>
                 ${headRight}
               </div>
@@ -8639,7 +8684,13 @@
         // (`session-card-project` im Header) gerendert wird — sonst stünde der
         // Projektname doppelt auf der Card (Header-Pill + leise Meta-Zeile).
         if (projName && !s.project) metaBits.push(`<span class="session-meta-proj">${escapeHtml(projName)}</span>`);
-        if (ctxPct !== null && ctxPct !== undefined) metaBits.push(`<span class="session-meta-ctx">${ctxPct}% Kontext</span>`);
+        if (ctxPct !== null && ctxPct !== undefined) {
+          // Fall back to a literal label if the locale bundle is stale/missing
+          // the key (t() returns the key itself) — never surface the raw key.
+          let ctxLabel = t('sessionCard.contextPct', { pct: ctxPct });
+          if (!ctxLabel.includes('%')) ctxLabel = `${ctxPct}% Context`;
+          metaBits.push(`<span class="session-meta-ctx">${ctxLabel}</span>`);
+        }
         const metaRow = metaBits.length
           ? `<div class="session-meta">${metaBits.join('<span class="session-meta-sep" aria-hidden="true"></span>')}</div>`
           : '';
@@ -9426,8 +9477,10 @@
         currentResizeObserver = resizeObserver;
         term.focus();
 
-        // Once-per-user hint for the 6.0 baseline copy UX.
-        if (!localStorage.getItem('penates_hint_copy_seen')) {
+        // Once-per-user hint for the 6.0 baseline copy UX. Desktop-only: the
+        // Alt/Shift+Drag · ⌘/Ctrl+C wording is meaningless on touch, where the
+        // copy-output button in the toolbar is the copy path instead.
+        if (!localStorage.getItem('penates_hint_copy_seen') && !window.matchMedia('(pointer: coarse)').matches) {
           showToast(t('toast.copyHint'), 'info');
           localStorage.setItem('penates_hint_copy_seen', '1');
         }
@@ -9674,6 +9727,10 @@
         if (!vv) return;
         const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         document.documentElement.style.setProperty('--kb-inset', `${inset}px`);
+        // Touch-bar is a keyboard-accessory: only meaningful while the software
+        // keyboard is up. Threshold guards against address-bar/chrome jitter
+        // (real keyboards are ~250-350px; chrome shifts are <120px).
+        document.body.dataset.kbOpen = inset > 120 ? 'true' : 'false';
         const bar = document.getElementById('touch-bar');
         if (bar) bar.style.bottom = inset > 0 ? `${inset}px` : '';
       });
@@ -10848,6 +10905,11 @@
     // pointerdown → sofort Send → 400ms Delay → Interval 50ms, bis
     // pointerup/cancel/leave.
     document.querySelectorAll('#touch-bar .touch-key').forEach(btn => {
+      // Keep the terminal focused when a key is tapped — otherwise the button
+      // steals focus, the software keyboard closes, and (since the touch-bar is
+      // now keyboard-gated) the bar itself disappears after one press. mousedown
+      // preventDefault blocks the focus shift without cancelling the click.
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
       if (btn.dataset.ctrl !== undefined) {
         btn.addEventListener('click', (e) => {
           e.preventDefault();

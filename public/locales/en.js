@@ -98,6 +98,7 @@ window.__I18N_BUNDLES.en = {
 
   // Session card — dormant metadata
   'sessionCard.lastSeen': 'Last seen: {time}',
+  'sessionCard.contextPct': '{pct}% Context',
 
   // Terminal toolbar buttons
   'terminal.toolbar.backAria': 'Back to dashboard',
