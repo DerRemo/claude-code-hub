@@ -4084,6 +4084,8 @@
     .preview-resizer:hover, .preview-resizer.dragging { background: var(--accent); }
     @media (pointer: coarse) {
       .preview-panel.open { position: fixed; inset: 0; z-index: 91; flex: 1; border-radius: 0; }
+      /* Full-Screen-Overlay → Safe-area selbst reservieren (kein App-Header dahinter). */
+      .preview-panel.open .preview-chrome { padding-top: calc(var(--space-2) + env(safe-area-inset-top)); }
       .preview-resizer { display: none; }
     }
 
