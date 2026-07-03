@@ -2934,6 +2934,14 @@
       user-select: none;
       -webkit-user-select: none;
     }
+    /* Select-Mode-Cue: Long-Press hat begonnen, der Drag zieht jetzt eine
+       tmux-Selektion (statt zu scrollen). Teal-Inset-Ring als Feedback. Der
+       Doppel-Klassen-Selektor + .term-focused-Variante schlagen die
+       .term-focused-Regel (die während des Drags praktisch immer aktiv ist). */
+    .terminal-container.terminal-container--selecting,
+    .terminal-container.term-focused.terminal-container--selecting {
+      box-shadow: inset 0 0 0 2px var(--teal), var(--shadow-card);
+    }
     .terminal-container .xterm-helper-textarea {
       /* Die helper-textarea muss editierbar bleiben, damit Tipp-Eingabe
          + native Paste-Events funktionieren. */
@@ -4825,9 +4833,10 @@
     window.commitTypeColor = _commitTypeColor;
     window.commitType = _commitType;
     import { partitionOverview as _partitionOverview, orderSidebar as _orderSidebar } from './session-sort.js';
-    import { ctrlByte as _ctrlByte, wheelScroll as _wheelScroll, wsCloseAction as _wsCloseAction, isPongFrame as _isPongFrame } from './terminal-logic.js';
+    import { ctrlByte as _ctrlByte, wheelScroll as _wheelScroll, sgrMouse as _sgrMouse, wsCloseAction as _wsCloseAction, isPongFrame as _isPongFrame } from './terminal-logic.js';
     window.ctrlByte = _ctrlByte;
     window.wheelScroll = _wheelScroll;
+    window.sgrMouse = _sgrMouse;
     window.wsCloseAction = _wsCloseAction;
     window.isPongFrame = _isPongFrame;
     window.SessionSort = { partitionOverview: _partitionOverview, orderSidebar: _orderSidebar };
@@ -5611,6 +5620,8 @@
     <button class="touch-key" type="button" data-seq="~">~</button>
     <button class="touch-key" type="button" data-seq="/">/</button>
     <button class="touch-key touch-key--wide" type="button" data-seq="\x03">Ctrl+C</button>
+    <button class="touch-key touch-key--wide" type="button" data-action="paste" data-i18n="terminal.touchBar.paste">Paste</button>
+    <button class="touch-key touch-key--wide" type="button" data-action="copy" data-i18n="terminal.touchBar.copy">Copy</button>
   </div>
 
   <!-- ── New Session Modal ────────────────────────────────────── -->
@@ -5898,6 +5909,11 @@
     let currentTerminal = null;
     let currentWs = null;
     let currentSessionName = null;
+    // Touch "Copy" (iOS PWA): der Long-Press-Drag im Terminal selektiert per
+    // tmux-Maus; bei Release prefetchen wir den tmux-Buffer hierher, damit der
+    // spätere Copy-Tap SYNCHRON (in seiner eigenen Geste) in die Zwischenablage
+    // schreiben kann — iOS erlaubt Clipboard-Write nur ohne vorheriges await.
+    let lastTmuxSelection = '';
     let currentResizeObserver = null;
     let refreshInterval = null;
     let sidebarUsageInterval = null;
@@ -9405,38 +9421,126 @@
         touchScrollAbort = new AbortController();
         const signal = touchScrollAbort.signal;
 
-        // Dynamische Cell-Height — wird bei jedem touchstart neu gelesen
-        // (Font-Resize, Rotation, Zoom können sie ändern).
-        const getCellHeight = () => {
+        // tmux-Mouse-Mode einmalig cachen (gated die Long-Press-Selektion, s.u.).
+        // Fail-open: bei Fetch-Fehler bleibt __tmuxMouseOn undefined = an.
+        if (window.__tmuxMouseOn === undefined) {
+          fetch('/api/settings', { headers: apiHeaders() })
+            .then(r => (r.ok ? r.json() : null))
+            .then(s => { window.__tmuxMouseOn = !s || s.tmuxMouse !== 'off'; })
+            .catch(() => {});
+        }
+
+        // Dynamische Cell-Maße — bei jedem touchstart neu gelesen (Font-Resize,
+        // Rotation, Zoom können sie ändern). axis = 'height' | 'width'.
+        const cellDim = (axis) => {
           try {
-            const h = term?._core?._renderService?.dimensions?.css?.cell?.height;
-            if (h && h > 0) return h;
+            const d = term?._core?._renderService?.dimensions?.css?.cell;
+            if (d && d[axis] > 0) return d[axis];
           } catch {}
-          const row = container.querySelector('.xterm-rows > div');
-          const rect = row?.getBoundingClientRect();
-          if (rect && rect.height > 0) return rect.height;
-          return 24; // Fallback
+          if (axis === 'height') {
+            const h = container.querySelector('.xterm-rows > div')?.getBoundingClientRect()?.height;
+            return h > 0 ? h : 24;
+          }
+          try {
+            const w = container.getBoundingClientRect().width / (term.cols || 80);
+            if (w > 0) return w;
+          } catch {}
+          return 10;
         };
 
-        let cellH = 24;
+        // Touch → 1-basierte Zellkoordinate (aufs Grid geklemmt).
+        const pointToCell = (clientX, clientY) => {
+          const rect = container.getBoundingClientRect();
+          const col = Math.max(1, Math.min(Math.floor((clientX - rect.left) / cw) + 1, term.cols || 1));
+          const row = Math.max(1, Math.min(Math.floor((clientY - rect.top) / ch) + 1, term.rows || 1));
+          return { col, row };
+        };
+        // SGR-Maus-Sequenz als PTY-Input. tmux (`mouse on`) liest sie wie ein
+        // echtes Terminal-Maus-Event: btn 0 = Taste 1, +32 = Bewegung-mit-Taste,
+        // 'M' = press/motion, 'm' = release. So entsteht serverseitig eine
+        // tmux-copy-mode-Selektion, die bei Release in den Buffer kopiert wird.
+        const sendMouse = (btn, cell, pressed) => {
+          if (!currentWs || currentWs.readyState !== WebSocket.OPEN) return;
+          currentWs.send(JSON.stringify({ type: 'input', data: sgrMouse(btn, cell.col, cell.row, pressed) }));
+        };
+
+        const LONG_PRESS_MS = 420;   // Halten ohne Bewegung → Select-Mode
+        const SLOP_PX = 10;          // Bewegung darüber VOR dem Timer = Scroll
+
+        let cw = 10, ch = 24;
+        let mode = 'idle';           // 'idle' | 'scroll' | 'select'
+        let startX = 0, startY = 0;
         let touchLastY = null;
         let touchAccumPx = 0;
+        let lastCell = null;
+        let pressTimer = 0;
+        const clearPress = () => { clearTimeout(pressTimer); pressTimer = 0; };
+        // Gemeinsamer Select-Abschluss: Cue weg + Taste-1-Release an tmux. Schließt
+        // die offene SGR-Press-Sequenz — auch beim Multi-Touch-Abbruch, sonst bliebe
+        // tmux mit gedrückter Maustaste hängen (verdrehte/hängende Selektion).
+        const closeSelect = () => {
+          container.classList.remove('terminal-container--selecting');
+          if (lastCell) sendMouse(0, lastCell, false);
+        };
+        const enterSelect = () => {
+          // Long-Press-Selektion braucht tmux `mouse on` — bei off würde tmux die
+          // SGR-Bytes als Müll an den CLI-Prozess durchreichen. Fail-open: nur bei
+          // explizitem 'off' deaktivieren (undefined = unbekannt → wie bisher an).
+          if (window.__tmuxMouseOn === false) return;
+          mode = 'select';
+          container.classList.add('terminal-container--selecting');
+          lastCell = pointToCell(startX, startY);
+          sendMouse(0, lastCell, true);      // Taste-1 press
+        };
 
         container.addEventListener('touchstart', (e) => {
-          if (e.touches.length !== 1) { touchLastY = null; return; }
-          cellH = getCellHeight();
-          touchLastY = e.touches[0].clientY;
+          if (e.touches.length !== 1) {
+            if (mode === 'select') closeSelect();   // Zweit-Touch → sauberes Release
+            mode = 'idle'; touchLastY = null; lastCell = null; clearPress();
+            return;
+          }
+          ch = cellDim('height'); cw = cellDim('width');
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+          touchLastY = startY;
           touchAccumPx = 0;
+          mode = 'idle';
+          clearPress();
+          pressTimer = setTimeout(enterSelect, LONG_PRESS_MS);
         }, { capture: true, passive: true, signal });
 
         container.addEventListener('touchmove', (e) => {
           if (touchLastY === null || e.touches.length !== 1) return;
+          const x = e.touches[0].clientX;
           const y = e.touches[0].clientY;
+
+          if (mode === 'idle') {
+            // Erste echte Bewegung vor dem Long-Press-Timer entscheidet:
+            // > SLOP → Scroll (Timer killen), sonst still weiter warten.
+            if (Math.abs(y - startY) > SLOP_PX || Math.abs(x - startX) > SLOP_PX) {
+              clearPress();
+              mode = 'scroll';
+              touchLastY = y;   // ab hier akkumulieren, kein Sprung
+            } else {
+              return;
+            }
+          }
+
+          if (mode === 'select') {
+            const cell = pointToCell(x, y);
+            if (!lastCell || cell.col !== lastCell.col || cell.row !== lastCell.row) {
+              lastCell = cell;
+              sendMouse(32, cell, true);   // Bewegung mit Taste 1 → Selektion ziehen
+            }
+            e.preventDefault();
+            return;
+          }
+
+          // mode === 'scroll'
           const dy = touchLastY - y;   // >0 = Finger hoch = wheel down
           touchLastY = y;
           touchAccumPx += dy;
-
-          const { lines, seq, remainderPx } = wheelScroll(touchAccumPx, cellH);
+          const { lines, seq, remainderPx } = wheelScroll(touchAccumPx, ch);
           if (lines !== 0) {
             touchAccumPx = remainderPx;
             if (currentWs && currentWs.readyState === WebSocket.OPEN) {
@@ -9446,7 +9550,29 @@
           e.preventDefault();
         }, { capture: true, passive: false, signal });
 
-        const endTouch = () => { touchLastY = null; touchAccumPx = 0; };
+        const endTouch = () => {
+          clearPress();
+          if (mode === 'select') {
+            closeSelect();   // release → tmux copy-selection-and-cancel
+            // tmux braucht einen Tick, um die Selektion in den Buffer zu legen;
+            // dann prefetchen wir ihn, damit der Copy-Tap SYNCHRON schreiben kann.
+            const sess = currentSessionName;
+            setTimeout(() => {
+              if (!sess || currentSessionName !== sess) return;
+              fetch('/api/sessions/' + encodeURIComponent(sess) + '/tmux-buffer', { headers: apiHeaders() })
+                .then(r => (r.ok ? r.json() : { text: '' }))
+                .then(({ text }) => {
+                  lastTmuxSelection = text || '';
+                  if (lastTmuxSelection) showToast(t('terminal.copySel.ready'), 'success');
+                })
+                .catch(() => {});
+            }, 160);
+          }
+          mode = 'idle';
+          touchLastY = null;
+          touchAccumPx = 0;
+          lastCell = null;
+        };
         container.addEventListener('touchend', endTouch, { capture: true, passive: true, signal });
         container.addEventListener('touchcancel', endTouch, { capture: true, passive: true, signal });
       }
@@ -9755,6 +9881,7 @@
       reconnectNow = null;
       reconnectTimer = null;
       reconnectAttempts = 0;
+      lastTmuxSelection = '';   // keine Alt-Selektion in die nächste Session tragen
       if (currentResizeObserver) {
         currentResizeObserver.disconnect();
         currentResizeObserver = null;
@@ -10907,6 +11034,46 @@
       setView(target, { fromPopstate: true, ...history.state });
     });
 
+    // ── Touch Copy/Paste (iOS PWA) ─────────────────────────────────────────
+    // Paste: readText() läuft IN der Tap-Geste (iOS zeigt seinen Paste-Chip) →
+    // term.paste() macht Bracketed-Paste + feuert onData → WS. Copy: schreibt die
+    // beim Selektions-Release geprefetchte tmux-Selektion SYNCHRON in die
+    // Zwischenablage (execCommand in der Geste, navigator.clipboard.writeText als
+    // Fallback) — KEIN await vor dem Write, sonst verweigert iOS die Clipboard.
+    async function pasteFromClipboard() {
+      const term = currentTerminal;
+      if (!term) return;
+      let text = '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          text = await navigator.clipboard.readText();
+        }
+      } catch { text = ''; }
+      if (!text) { showToast(t('terminal.paste.empty'), 'error'); return; }
+      try { term.paste(text); } catch {}
+      try { term.focus(); } catch {}
+    }
+    async function copyTmuxSelection() {
+      const text = lastTmuxSelection;
+      if (!text) { showToast(t('terminal.copySel.empty'), 'error'); return; }
+      // execCommand SYNCHRON zuerst (iOS-Transient-Activation bleibt gültig);
+      // nur wenn das scheitert, den async writeText-Fallback AWAITEN, damit der
+      // Toast erst nach echtem Erfolg/Fehler kommt (kein falsches "kopiert").
+      let ok = false;
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0;';
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand('copy'); ta.remove();
+      } catch { ok = false; }
+      if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
+        try { await navigator.clipboard.writeText(text); ok = true; } catch { ok = false; }
+      }
+      showToast(ok ? t('terminal.copySel.done') : t('toast.copyFailed'), ok ? 'success' : 'error');
+      try { currentTerminal?.focus(); } catch {}
+    }
+
     // Touch-Toolbar: Button-Handler. data-seq enthält die Escape-Sequenz
     // als JS-String-Literal (\x1b, \t, …) und wird hier einmal dekodiert.
     // Tasten mit data-repeat (die vier Pfeile) bekommen Key-Repeat:
@@ -10923,6 +11090,14 @@
           e.preventDefault();
           setCtrlSticky(!pendingCtrl);
         });
+        return;
+      }
+      if (btn.dataset.action === 'paste') {
+        btn.addEventListener('click', (e) => { e.preventDefault(); pasteFromClipboard(); });
+        return;
+      }
+      if (btn.dataset.action === 'copy') {
+        btn.addEventListener('click', (e) => { e.preventDefault(); copyTmuxSelection(); });
         return;
       }
       const raw = btn.dataset.seq || '';
@@ -11500,6 +11675,7 @@
         return;
       }
       const s = data.settings || {}, st = data.status || {}, f = data.features || {};
+      window.__tmuxMouseOn = s.tmuxMouse !== 'off';   // Long-Press-Selektion-Gate frisch halten
       const onOff = (b) => b ? t('common.on') : t('common.off');
       const statRow = (label, value) =>
         `<div class="settings-row"><label>${escapeHtml(label)}</label>` +
@@ -11528,13 +11704,14 @@
       if (tm) tm.addEventListener('click', async () => {
         const next = tm.getAttribute('aria-pressed') !== 'true';
         tm.setAttribute('aria-pressed', next ? 'true' : 'false');
+        window.__tmuxMouseOn = next;   // Long-Press-Selektion-Gate live nachziehen
         try {
           await fetch('/api/settings', {
             method: 'PATCH',
             headers: apiHeaders(),
             body: JSON.stringify({ tmuxMouse: next ? 'on' : 'off' }),
           });
-        } catch { tm.setAttribute('aria-pressed', next ? 'false' : 'true'); }
+        } catch { tm.setAttribute('aria-pressed', next ? 'false' : 'true'); window.__tmuxMouseOn = !next; }
       });
       // Session-restore toggles live in their own static section (#sec-restore)
       // but are server settings from the same /api/settings payload → wire here

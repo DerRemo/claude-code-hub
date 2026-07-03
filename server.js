@@ -69,6 +69,7 @@ import { browseMkdir, BrowseMkdirError } from './lib/browse-mkdir.js';
 import { parseStatusV2, getDiff, gitStatusMap, getRecentCommits, detectBaseBranch, getBranchDiff } from './lib/git-diff.js';
 import { getLog, getBranches, showCommit } from './lib/git-history.js';
 import { captureScrollback } from './lib/scrollback.js';
+import { showBuffer } from './lib/tmux-buffer.js';
 import { saveSessionImage } from './lib/session-images.js';
 import { readSessionFile, SessionFileError } from './lib/session-files.js';
 import { isPreviewHost, proxyHttp, attachUpgrade } from './lib/preview-proxy.js';
@@ -1867,6 +1868,20 @@ app.get('/api/sessions/:name/scrollback', (req, res) => {
   }
   const lines = Math.max(1, Math.min(parseInt(req.query.lines) || 2000, 10000));
   res.json({ data: captureScrollback(name, { lines, tmux: TMUX }) });
+});
+
+// GET /api/sessions/:name/tmux-buffer — jüngster tmux-Paste-Buffer für den Touch-
+// "Copy"-Button (iOS-PWA). Ablauf clientseitig: Long-Press-Drag selektiert im Pane
+// → Release kopiert die Selektion in den tmux-Buffer → dieser Endpoint liest ihn,
+// der Client schreibt ihn synchron (in der Tap-Geste) in die Zwischenablage.
+// tmux-Buffer sind server-global → show-buffer liefert den jüngsten.
+app.get('/api/sessions/:name/tmux-buffer', (req, res) => {
+  const name = req.params.name;
+  if (!requireValidName(res, name)) return;
+  if (!getTmuxSessions().some(s => s.name === name)) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  res.json({ text: showBuffer({ tmux: TMUX }) });
 });
 
 // GET /api/sessions/:name/file-content?path=<path> — guarded reader for

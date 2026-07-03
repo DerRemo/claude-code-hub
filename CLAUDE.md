@@ -87,6 +87,7 @@ Items in Released/In-Dev werden im Hub-Detail-View getoggelt (`PATCH /api/projec
 | GET | `/api/sessions/:name/git/log`·`/branches`·`/commit/:sha` | Repo-Panel: Commit-History · Branches · Commit-Detail (`lib/git-history.js`) |
 | GET | `/api/sessions/:name/file-content` | Datei-Inhalt für klickbare Terminal-Pfade (`lib/session-files.js`) |
 | GET | `/api/sessions/:name/scrollback?lines=N` | tmux-History für Reconnect-Replay |
+| GET | `/api/sessions/:name/tmux-buffer` | Jüngster tmux-Paste-Buffer (Touch-„Copy" iOS-PWA; `lib/tmux-buffer.js`) |
 | POST | `/api/sessions/:name/upload` | Upload in Session-cwd (Busboy multipart) |
 | POST | `/api/sessions/:name/image` | Einzelnes PNG (`express.raw image/png`, ≤8 MB) → `.penates-images/`, liefert `{rel}` |
 | GET | `/api/browse` | Verzeichnis-Picker (`?path=…&hidden=1`), auf `$HOME` beschränkt (403 sonst) |

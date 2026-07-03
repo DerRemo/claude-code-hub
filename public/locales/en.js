@@ -140,6 +140,12 @@ window.__I18N_BUNDLES.en = {
 
   // Touch bar
   'terminal.touchBar.aria': 'Virtual Keys',
+  'terminal.touchBar.copy': 'Copy',
+  'terminal.touchBar.paste': 'Paste',
+  'terminal.paste.empty': 'Clipboard is empty',
+  'terminal.copySel.empty': 'Nothing selected — long-press and drag to select first',
+  'terminal.copySel.ready': 'Selection ready — tap Copy',
+  'terminal.copySel.done': 'Selection copied',
 
   // Generic dialogs
   'dialog.confirm': 'Confirm',

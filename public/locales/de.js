@@ -140,6 +140,12 @@ window.__I18N_BUNDLES.de = {
 
   // Touch bar
   'terminal.touchBar.aria': 'Virtuelle Tasten',
+  'terminal.touchBar.copy': 'Kopieren',
+  'terminal.touchBar.paste': 'Einfügen',
+  'terminal.paste.empty': 'Zwischenablage ist leer',
+  'terminal.copySel.empty': 'Nichts markiert — zum Markieren lange drücken und ziehen',
+  'terminal.copySel.ready': 'Markierung bereit — auf Kopieren tippen',
+  'terminal.copySel.done': 'Markierung kopiert',
 
   // Generic dialogs
   'dialog.confirm': 'Bestätigen',

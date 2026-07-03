@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ctrlByte, wheelScroll, wsCloseAction, isPongFrame } from './terminal-logic.js';
+import { ctrlByte, wheelScroll, sgrMouse, wsCloseAction, isPongFrame } from './terminal-logic.js';
 
 // ── ctrlByte ──
 test('ctrlByte: letters map to control chars (case-insensitive bits)', () => {
@@ -17,6 +17,17 @@ test('ctrlByte: out of range and bad length → null', () => {
   assert.equal(ctrlByte('\x7f'), null); // above range
   assert.equal(ctrlByte('ab'), null);   // length != 1
   assert.equal(ctrlByte(''), null);
+});
+
+// ── sgrMouse ──
+test('sgrMouse: button-1 press → M with btn 0', () => {
+  assert.equal(sgrMouse(0, 5, 3, true), '\x1b[<0;5;3M');
+});
+test('sgrMouse: motion-with-button → btn 32, still M', () => {
+  assert.equal(sgrMouse(32, 12, 7, true), '\x1b[<32;12;7M');
+});
+test('sgrMouse: release → lowercase m', () => {
+  assert.equal(sgrMouse(0, 12, 7, false), '\x1b[<0;12;7m');
 });
 
 // ── wheelScroll ──

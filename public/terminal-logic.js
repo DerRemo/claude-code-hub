@@ -25,6 +25,14 @@ export function wheelScroll(accumPx, cellH) {
   return { lines, seq, remainderPx: accumPx - lines * cellH };
 }
 
+// SGR mouse escape as PTY input (tmux with `mouse on` parses it like a real
+// terminal mouse report). btn: 0 = button 1, +32 = motion-with-button; col/row
+// are 1-based cells; pressed → 'M' (press/motion), else 'm' (release). Powers
+// the long-press touch-selection that drives tmux copy-mode on the iOS PWA.
+export function sgrMouse(btn, col, row, pressed) {
+  return `\x1b[<${btn};${col};${row}${pressed ? 'M' : 'm'}`;
+}
+
 // WS close-code decision. 4001 = auth failed, 4004 = session gone (both
 // terminal, no reconnect); everything else → reconnect.
 export function wsCloseAction(code) {
