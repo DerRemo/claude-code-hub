@@ -1,13 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Penates">
-  <!-- Penates: a home (gabled house with overhanging eaves) holding a terminal
-       prompt. Flat, single teal mark on a soft Catppuccin-Latte tile. -->
-  <rect width="512" height="512" rx="112" fill="#eff1f5"/>
-  <!-- house silhouette: roof + body as one solid teal shape -->
-  <path d="M256 128 L412 256 L364 256 L364 408 L148 408 L148 256 L100 256 Z" fill="#179299"/>
-  <!-- terminal prompt ">_" knocked out as negative space (tile-coloured),
-       rounded strokes -->
-  <g fill="none" stroke="#eff1f5" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="192 290 254 332 192 374"/>
-    <line x1="276" y1="360" x2="320" y2="360"/>
-  </g>
+  <!-- Penates web icon = the iOS app-icon design: white house + ">_" prompt
+       knocked out (gradient shows through) on a teal linear gradient.
+       Gradient + colors mirror apple/Penates/AppIcon.icon/icon.json. -->
+  <defs>
+    <linearGradient id="pg" gradientUnits="userSpaceOnUse" x1="256" y1="512" x2="256" y2="0">
+      <stop offset="0" stop-color="#0E5F6B"/>
+      <stop offset="1" stop-color="#1AA6AD"/>
+    </linearGradient>
+    <mask id="ph" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#000"/>
+      <path d="M256 128 L412 256 L364 256 L364 408 L148 408 L148 256 L100 256 Z" fill="#fff"/>
+      <g fill="none" stroke="#000" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="192 290 254 332 192 374"/>
+        <line x1="276" y1="360" x2="320" y2="360"/>
+      </g>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#pg)"/>
+  <rect width="512" height="512" fill="#fff" mask="url(#ph)"/>
 </svg>
