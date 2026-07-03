@@ -18,6 +18,7 @@ export const DEFAULTS = {
   termCursor: 'bar',         // 'block' | 'bar' | 'underline'
   termCopyOnSelect: false,
   termBell: false,
+  termMacOptionMeta: false,  // macOS: ⌥ as Meta (escape-seq shortcuts). Off → ⌥ composes native chars (@ | {} on EU layouts).
   // Behavior
   landingView: 'last',       // 'last' | 'dashboard' | 'projects' | 'usage'
   defaultCli: 'claude',      // a CLIS id; validated against the registry at apply time

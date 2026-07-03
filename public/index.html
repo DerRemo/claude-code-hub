@@ -5384,6 +5384,13 @@
               <button type="button" class="toggle-btn" id="pref-term-bell" aria-pressed="false"></button>
             </div>
           </div>
+          <div class="settings-row">
+            <label data-i18n="settings.terminal.macOptionMeta">macOS: ⌥ as Meta</label>
+            <div class="settings-row__control">
+              <button type="button" class="toggle-btn" id="pref-term-macoptmeta" aria-pressed="false"></button>
+            </div>
+          </div>
+          <p class="settings-row__hint" data-i18n="settings.terminal.macOptionMetaHint">Off: the Option key types layout characters (@ | { } on non-US keyboards). On: Option sends Meta shortcuts (⌥B/⌥F word navigation).</p>
         </div>
         <div class="settings-card settings-selecthelp">
           <div class="settings-selecthelp__title" data-i18n="settings.terminal.selectHelp.title">Selecting &amp; copying text</div>
@@ -6201,6 +6208,7 @@
         termCursor:       () => M ? M.coerceEnum(raw('termCursor'), M.ENUMS.termCursor, M.DEFAULTS.termCursor) : 'bar',
         termCopyOnSelect: () => M ? M.coerceBool(raw('termCopyOnSelect'), M.DEFAULTS.termCopyOnSelect) : false,
         termBell:         () => M ? M.coerceBool(raw('termBell'), M.DEFAULTS.termBell) : false,
+        termMacOptionMeta:() => M ? M.coerceBool(raw('termMacOptionMeta'), M.DEFAULTS.termMacOptionMeta) : false,
         landingView:      () => { const r = raw('landingView');
                                   return ['last','dashboard','projects','usage'].includes(r) ? r : 'last'; },
         defaultCli:       () => raw('defaultCli') || (M ? M.DEFAULTS.defaultCli : 'claude'),
@@ -9131,7 +9139,7 @@
         macOptionClickForcesSelection: true,
         scrollback: window.Prefs ? window.Prefs.get.termScrollback() : 5000,
         fastScrollModifier: 'shift',
-        macOptionIsMeta: true,
+        macOptionIsMeta: window.Prefs ? window.Prefs.get.termMacOptionMeta() : false,
         theme: buildXtermTheme(),
       });
 
@@ -11334,6 +11342,16 @@
           const next = bell.getAttribute('aria-pressed') !== 'true';
           P.setRaw('termBell', next ? '1' : '0');
           bell.setAttribute('aria-pressed', next ? 'true' : 'false');
+        });
+      }
+      const optMeta = document.getElementById('pref-term-macoptmeta');
+      if (optMeta) {
+        optMeta.setAttribute('aria-pressed', P.get.termMacOptionMeta() ? 'true' : 'false');
+        optMeta.addEventListener('click', () => {
+          const next = optMeta.getAttribute('aria-pressed') !== 'true';
+          P.setRaw('termMacOptionMeta', next ? '1' : '0');
+          optMeta.setAttribute('aria-pressed', next ? 'true' : 'false');
+          if (window.term) window.term.options.macOptionIsMeta = next;
         });
       }
       // Auswahl-Geste-Tabelle: aktuelle Plattform-Zeile markieren (analog xterms isMac).

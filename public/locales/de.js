@@ -724,6 +724,8 @@ window.__I18N_BUNDLES.de = {
   'settings.terminal.cursorUnderline': 'Unterstrich',
   'settings.terminal.copyOnSelect': 'Bei Auswahl kopieren',
   'settings.terminal.bell': 'Terminal-Glocke',
+  'settings.terminal.macOptionMeta': 'macOS: ⌥ als Meta',
+  'settings.terminal.macOptionMetaHint': 'Aus: Die Wahltaste tippt Layout-Zeichen (@ | { } auf nicht-US-Tastaturen). An: Option sendet Meta-Kürzel (⌥B/⌥F Wort-Navigation).',
   'settings.terminal.selectHelp.title': 'Text markieren & kopieren',
   'settings.terminal.selectHelp.intro': 'Der Maus-Modus ist an (fürs Scrollen) — zum Markieren beim Ziehen einen Modifier halten, dann kopieren:',
   'settings.terminal.selectHelp.colPlatform': 'Plattform',
