@@ -1,0 +1,38 @@
+---
+title: Channels
+description: Eine Claude-Session mit Telegram, Discord oder iMessage verbinden und den Anbieter beim Start wählen.
+sidebar:
+  order: 13
+---
+
+## Was es ist
+
+Channels ist ein Claude-Code-Feature, das eine laufende Session mit einem externen Chat-Anbieter verbindet. Du schreibst Claude aus Telegram, Discord oder iMessage, die Arbeit läuft auf deinem Rechner, und die Antwort kommt im selben Chat zurück. Penates lässt dich den Anbieter beim Start einer Claude-Session wählen und kennzeichnet jede Session mit aktivem Channel durch ein kleines Anbieter-Symbol in der Übersicht.
+
+Ein Channel wird pro Session über das `--channels`-Flag am `claude`-Befehl aktiviert. Penates setzt dieses Flag anhand deiner Auswahl im Dialog „Neue Session", sodass der Befehl die alleinige Quelle der Wahrheit bleibt (das Symbol in der Übersicht wird direkt daraus zurückgelesen).
+
+## Warum / wann
+
+Channels sind praktisch, wenn du eine Session unterwegs vom Handy erreichen willst. Stelle eine Frage über Telegram und lies die Antwort dort, oder leite Benachrichtigungen aus CI oder einem Monitor in eine Session, die deine Dateien bereits offen hat und weiß, woran du gearbeitet hast.
+
+## Verwendung
+
+1. In Penates **Neue Session** öffnen und die **Claude**-CLI wählen.
+2. In der Zeile **Kanal** Telegram, Discord oder iMessage wählen (oder Kein). Die Zeile erscheint nur bei Claude; die anderen CLIs haben kein Channel-Äquivalent.
+3. Session starten. Penates startet sie mit dem passenden Flag `--channels plugin:<anbieter>@claude-plugins-official`.
+4. Sessions mit aktivem Channel zeigen ein kleines Anbieter-Symbol neben dem Namen in der Übersicht.
+
+Channels liefern erst, wenn das Anbieter-Plugin installiert und konfiguriert ist. Dieses Setup passiert in Claude Code selbst, nicht in Penates (so wie jede CLI ihren eigenen Login besitzt):
+
+- Plugin in Claude Code installieren: `/plugin install telegram@claude-plugins-official` (oder `discord`, oder `imessage`).
+- Zugangsdaten konfigurieren: ein Bot-Token für Telegram und Discord, oder Full Disk Access für iMessage.
+- Auf Team- oder Enterprise-Plänen muss ein Admin Channels für die Organisation aktivieren.
+
+Die vollständige Anbieter-Einrichtung steht in Anthropics [Channels-Dokumentation](https://code.claude.com/docs/en/channels).
+
+## Grenzen
+
+- Channels sind Claude-spezifisch. Der Picker ist bei Codex, Antigravity und opencode ausgeblendet.
+- Penates setzt nur das `--channels`-Flag. Plugin-Installation, Bot-Token und Konto-Pairing laufen in Claude Code.
+- Channels sind eine Research Preview und erfordern Claude Code v2.1.80 oder neuer mit Anthropic-Authentifizierung (ein claude.ai-Konto oder ein Console-API-Key).
+- Der Penates-Picker wählt einen Anbieter pro Session.

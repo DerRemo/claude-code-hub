@@ -154,3 +154,83 @@ test('continueCommand: unknown CLI / empty / null → null', () => {
   assert.equal(continueCommand(null), null);
   assert.equal(continueCommand(undefined), null);
 });
+
+// ── Channels (Claude Code channels feature) ──────────────────────
+import { CHANNELS, withChannel, channelsFromCommand } from './clis.js';
+
+test('CHANNELS registry integrity', () => {
+  assert.ok(Array.isArray(CHANNELS) && CHANNELS.length === 3);
+  assert.deepEqual(CHANNELS.map(c => c.id), ['telegram', 'discord', 'imessage']);
+  for (const c of CHANNELS) {
+    assert.ok(c.id && c.label && c.plugin && c.color, `channel ${c.id} has core fields`);
+    assert.ok(c.plugin.endsWith('@claude-plugins-official'), `channel ${c.id} plugin ref is official`);
+    assert.equal(c.plugin.split('@')[0], c.id, `channel ${c.id} plugin name matches id`);
+  }
+});
+
+test('each channel has a non-trivial inline SVG logo', () => {
+  for (const c of CHANNELS) {
+    assert.equal(typeof c.logo, 'string', `channel ${c.id} has a logo string`);
+    assert.ok(c.logo.includes('<svg') && c.logo.includes('</svg>'), `channel ${c.id} logo is closed svg`);
+    assert.ok(c.logo.length > 80, `channel ${c.id} logo is non-trivial`);
+  }
+});
+
+test('withChannel appends --channels flag to a bare claude command', () => {
+  assert.equal(withChannel('claude', 'telegram'),
+    'claude --channels plugin:telegram@claude-plugins-official');
+  assert.equal(withChannel('claude --permission-mode auto', 'discord'),
+    'claude --permission-mode auto --channels plugin:discord@claude-plugins-official');
+  assert.equal(withChannel('claude --dangerously-skip-permissions', 'imessage'),
+    'claude --dangerously-skip-permissions --channels plugin:imessage@claude-plugins-official');
+});
+
+test('withChannel replaces an existing channel (idempotent per id)', () => {
+  const once = withChannel('claude --permission-mode auto', 'telegram');
+  assert.equal(withChannel(once, 'telegram'), once);            // same id → unchanged
+  assert.equal(withChannel(once, 'discord'),                    // switch id → replaced
+    'claude --permission-mode auto --channels plugin:discord@claude-plugins-official');
+});
+
+test('withChannel with null/unknown id strips channels, returns bare command', () => {
+  assert.equal(withChannel('claude --permission-mode auto', null), 'claude --permission-mode auto');
+  assert.equal(withChannel('claude --channels plugin:telegram@claude-plugins-official', null), 'claude');
+  assert.equal(withChannel('claude --permission-mode auto', 'nope'), 'claude --permission-mode auto');
+  assert.equal(withChannel('claude', undefined), 'claude');
+});
+
+test('withChannel preserves flags that follow --channels when stripping', () => {
+  // --channels consumes only the plugin: tokens; a trailing non-plugin flag survives.
+  assert.equal(
+    withChannel('claude --channels plugin:telegram@claude-plugins-official --permission-mode auto', null),
+    'claude --permission-mode auto');
+  assert.equal(
+    withChannel('claude --channels plugin:telegram@claude-plugins-official --permission-mode auto', 'discord'),
+    'claude --permission-mode auto --channels plugin:discord@claude-plugins-official');
+});
+
+test('channelsFromCommand parses a single channel', () => {
+  assert.deepEqual(channelsFromCommand('claude --channels plugin:telegram@claude-plugins-official'), ['telegram']);
+  assert.deepEqual(channelsFromCommand('claude --permission-mode auto --channels plugin:discord@claude-plugins-official'), ['discord']);
+});
+
+test('channelsFromCommand parses multiple space-separated channels', () => {
+  assert.deepEqual(
+    channelsFromCommand('claude --channels plugin:telegram@claude-plugins-official plugin:imessage@claude-plugins-official'),
+    ['telegram', 'imessage']);
+});
+
+test('channelsFromCommand: none / unknown-plugin filtered / empty / null → []', () => {
+  assert.deepEqual(channelsFromCommand('claude --permission-mode auto'), []);
+  assert.deepEqual(channelsFromCommand('claude --channels plugin:mystery@claude-plugins-official'), []);
+  assert.deepEqual(channelsFromCommand('codex'), []);
+  assert.deepEqual(channelsFromCommand(''), []);
+  assert.deepEqual(channelsFromCommand(null), []);
+  assert.deepEqual(channelsFromCommand(undefined), []);
+});
+
+test('withChannel and channelsFromCommand round-trip', () => {
+  for (const c of CHANNELS) {
+    assert.deepEqual(channelsFromCommand(withChannel('claude --permission-mode auto', c.id)), [c.id]);
+  }
+});

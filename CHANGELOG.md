@@ -53,6 +53,8 @@ iOS-Begleit-App für iPhone und iPad ist in Arbeit (coming soon).
 
 ## In Development: v1.2.0
 
+- [ ] Claude Code Channels — beim Anlegen einer Claude-Session Telegram, Discord oder iMessage als Kanal wählen; Sessions mit aktivem Kanal zeigen ein Anbieter-Symbol in der Übersicht {priority: p1, theme: interop}
+
 ## Archiv: v0.3.0
 
 Historische Items die mit v0.3.0 oder davor geshipped sind. Der Parser

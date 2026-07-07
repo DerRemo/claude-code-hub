@@ -2410,7 +2410,7 @@
     }
 
     /* ── New-Session redesign ─────────────────────────────────────── */
-    .modal--wide { max-width: 680px; padding: 0; overflow: hidden; }
+    .modal--wide { max-width: 680px; padding: 0; overflow: hidden auto; }
     .ns-header { display: flex; align-items: center; gap: 12px; padding: 18px 22px;
       border-bottom: 1px solid var(--border-subtle); }
     .ns-header-icon { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
@@ -2423,7 +2423,10 @@
     /* Feste Split-Höhe (Desktop): Tree UND Recent-Liste scrollen in einer
        konstanten Fläche → Modal-Höhe springt beim Tab-Wechsel nicht mehr.
        Auf Mobile (gestackt) wieder auto. */
-    .ns-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr); height: 430px; }
+    /* Höhe flexibel: wächst mit dem Inhalt (z. B. der Channel-Zeile bei Claude).
+       Kein festes px — passt nie ab, weil das Modal selbst auf Viewport-Höhe
+       gedeckelt ist und scrollt (siehe .modal--wide), statt unten abzuschneiden. */
+    .ns-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr); height: auto; }
     .ns-left { padding: 18px 20px; border-right: 1px solid var(--border-subtle);
       display: flex; flex-direction: column; min-height: 0; min-width: 0; }
     .ns-right { padding: 18px 22px; display: flex; flex-direction: column; min-width: 0; }
@@ -2441,7 +2444,7 @@
     #dir-panel-browse, #dir-panel-recent { flex: 1; display: flex; flex-direction: column; min-height: 0; }
     #dir-panel-browse[hidden], #dir-panel-recent[hidden] { display: none !important; }
     .ns-left .tree-picker { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-    .ns-left .tree-list { flex: 1; max-height: none; min-height: 0; }
+    .ns-left .tree-list { flex: 1; max-height: 48vh; min-height: 0; overflow-y: auto; }
     /* Recent-Liste füllt dieselbe Spaltenhöhe wie der Tree (oben ausgerichtet,
        scrollt intern bei vielen Einträgen) → Modal-Höhe bleibt beim Tab-Wechsel konstant. */
     .ns-left .recent-dirs-list { flex: 0 1 auto; max-height: none; min-height: 0; overflow-y: auto; }
@@ -2474,6 +2477,20 @@
     .modus-btn[data-tier="danger"][aria-pressed="true"] { border-color: var(--red);   background: var(--red-dim);  color: var(--red); }
     .modus-btn[aria-pressed="true"] .modus-sub { color: inherit; opacity: .8; }
 
+    .channel-picker { display: flex; gap: 7px; flex-wrap: wrap; }
+    .channel-pick-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
+      border-radius: 9px; background: var(--bg-elevated); border: 1px solid var(--border); cursor: pointer;
+      color: var(--text-secondary); font-size: 12.5px; font-weight: 600;
+      transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out); }
+    .channel-pick-btn .channel-logo { width: 16px; height: 16px; flex-shrink: 0; display: grid; place-items: center; }
+    .channel-pick-btn .channel-logo svg { width: 16px; height: 16px; display: block; }
+    .channel-pick-btn[aria-pressed="true"] { color: var(--text-primary);
+      border-color: var(--channel-color, var(--accent));
+      background: color-mix(in srgb, var(--channel-color, var(--accent)) 12%, transparent); }
+    .channel-hint { margin: 8px 0 0; font-size: 11px; line-height: 1.4; color: var(--text-muted); }
+    .channel-hint a { color: var(--accent); text-decoration: none; }
+    .channel-hint a:hover { text-decoration: underline; }
+
     /* New-Session-Split stackt auf der 640er-Sheet-Stufe (vorher 580 — auf die
        Standard-Leiter gezogen; rein mobil, kein Desktop-Layout berührt). */
     @media (max-width: 640px) {
@@ -2486,6 +2503,8 @@
       background: var(--cli-color, var(--accent)); flex-shrink: 0; }
     .session-meta-item .cli-badge { width: 14px; height: 14px; font-size: 9px; border-radius: 4px; }
     .dormant-stub .cli-badge { width: 14px; height: 14px; font-size: 9px; border-radius: 4px; vertical-align: middle; margin-right: 4px; }
+    .channel-badge { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; flex-shrink: 0; }
+    .channel-badge svg { width: 15px; height: 15px; display: block; }
 
     .modal-actions {
       display: flex;
@@ -2879,6 +2898,7 @@
       position: relative; /* Anker für den cwd-Tooltip am Namen */
     }
     #terminal-cli-logo { color: var(--text-secondary); }
+    #terminal-channel-icon:empty { display: none; }  /* kein Flex-Gap ohne Channel */
 
     /* Inline-Rename des Session-Namens (Doppelklick, Task 11). */
     .terminal-session-name.editing { display: none; }
@@ -5134,6 +5154,7 @@
         <span class="terminal-name-group" data-tooltip="">
           <span class="cli-logo cli-logo--fallback" id="terminal-cli-logo" aria-hidden="true"></span>
           <span class="terminal-session-name" id="terminal-session-name"></span>
+          <span id="terminal-channel-icon" aria-hidden="true"></span>
         </span>
         <span class="conn-status" id="conn-status" data-state="connecting">
           <span class="dot"></span><span id="conn-status-label" data-i18n="terminal.connStatus.connecting">Connecting</span>
@@ -5817,6 +5838,14 @@
           <div class="form-group">
             <label class="form-label" data-i18n="modal.newSession.modeLabel">Mode</label>
             <div class="modus" id="modus-control" role="group" aria-label="Mode"></div>
+          </div>
+          <div class="form-group" id="channel-group" hidden>
+            <label class="form-label" data-i18n="modal.newSession.channelLabel">Channel</label>
+            <div class="channel-picker" id="channel-picker" role="group" aria-label="Channel"></div>
+            <p class="channel-hint">
+              <span data-i18n="modal.newSession.channelHint">Requires the channel plugin installed and configured.</span>
+              <a href="https://code.claude.com/docs/en/channels" target="_blank" rel="noopener" data-i18n="modal.newSession.channelHintLink">Setup guide</a>
+            </p>
           </div>
           <input type="hidden" id="new-session-cmd" value="claude --permission-mode auto">
           <div class="modal-actions">
@@ -8673,6 +8702,7 @@
                 ${cardCliLogo(s.command)}
                 <span class="session-name-text">${escapeHtml(displayName)}</span>
                 ${projectBadge(s, displayName)}
+                ${cardChannelIcon(s.command)}
               </div>
               <div class="session-status ${act.cls}" title="${escapeHtml(act.title)}">${label}</div>
             </div>
@@ -8726,6 +8756,7 @@
                 ${cardCliLogo(s.command)}
                 <span class="session-name-text">${escapeHtml(displayName)}</span>
                 ${projectBadge(s, displayName)}
+                ${cardChannelIcon(s.command)}
               </div>
               <div class="session-status ${act.cls}" title="${escapeHtml(act.title)}">${label}</div>
             </div>
@@ -8756,6 +8787,7 @@
                 ${cardCliLogo(s.command || 'claude')}
                 <span class="session-name-text">${escapeHtml(displayName)}</span>
                 ${projectBadge(s, displayName)}
+                ${cardChannelIcon(s.command)}
               </div>
               <div class="session-status unknown" title="${t('sessionCard.dormantBadgeTitle')}">${t('sessionCard.status.dormant')} · ${escapeHtml(lastSeen)}</div>
             </div>
@@ -9090,6 +9122,10 @@
         const s = Array.isArray(sessions) ? sessions.find(x => x.name === name) : null;
         const logoSlot = document.getElementById('terminal-cli-logo');
         if (logoSlot) logoSlot.outerHTML = cardCliLogo(s ? s.command : null).replace('class="cli-logo', 'id="terminal-cli-logo" class="cli-logo');
+        // Channel-Symbol (Telegram/Discord/iMessage) neben dem Namen, konsistent
+        // mit den Overview-Cards — sichtbar auch während man in der Session ist.
+        const chSlot = document.getElementById('terminal-channel-icon');
+        if (chSlot) chSlot.innerHTML = cardChannelIcon(s ? s.command : null);
         // cwd-Tooltip auf die Gruppe (nicht den Namen-Span — der hat
         // overflow:hidden fürs Ellipsis und würde das ::after-Tooltip klippen).
         const grp = document.querySelector('.terminal-name-group');
@@ -10408,8 +10444,22 @@
       return `<span class="${cls}" aria-hidden="true">${svg}</span>`;
     }
 
+    // Kleines Anbieter-Symbol pro aktivem Channel (Claude-Sessions mit
+    // --channels-Flag). Leerstring solange clis.js lädt oder keiner gesetzt ist.
+    function cardChannelIcon(command) {
+      if (!_clisMod || !_clisMod.channelsFromCommand) return '';
+      const ids = _clisMod.channelsFromCommand(command);
+      if (!ids.length) return '';
+      return ids.map(id => {
+        const c = _clisMod.CHANNELS && _clisMod.CHANNELS.find(x => x.id === id);
+        if (!c) return '';
+        return `<span class="channel-badge" title="${escapeHtml(c.label)}" aria-label="${escapeHtml(c.label)}">${c.logo}</span>`;
+      }).join('');
+    }
+
     let _activeCli = 'claude';
     let _activeTier = null;   // null → fall back to defaultVariant tier
+    let _activeChannel = null; // Claude-only Channel-Auswahl (null = kein); per Session, nicht Pref-persistiert
 
     // Modus-Tier → Icon + i18n-Sublabel-Key. Reihenfolge/Label kommen aus clis.js.
     const MODUS_META = {
@@ -10423,7 +10473,40 @@
       const hidden = document.getElementById('new-session-cmd');
       if (!hidden) return;
       const v = mod.variantByTier(_activeCli, _activeTier) || mod.defaultVariant(_activeCli);
-      hidden.value = v ? v.command : _activeCli;
+      let cmd = v ? v.command : _activeCli;
+      // Channels sind Claude-spezifisch — für andere CLIs null (Flag entfällt).
+      if (mod.withChannel) cmd = mod.withChannel(cmd, _activeCli === 'claude' ? _activeChannel : null);
+      hidden.value = cmd;
+    }
+
+    // Rendert den Channel-Picker (nur Claude). None + drei Anbieter; Klick setzt
+    // _activeChannel + synct den Command. Für Nicht-Claude wird die Gruppe
+    // versteckt (syncCommand droppt das Flag über das null-Gate).
+    function renderChannelPicker(mod) {
+      const group = document.getElementById('channel-group');
+      const picker = document.getElementById('channel-picker');
+      if (!group || !picker) return;
+      const isClaude = _activeCli === 'claude';
+      group.hidden = !isClaude || !mod || !Array.isArray(mod.CHANNELS);
+      if (group.hidden) return;
+      const opts = [{ id: null, label: t('modal.newSession.channelNone') }]
+        .concat(mod.CHANNELS.map(c => ({ id: c.id, label: c.label, color: c.color, logo: c.logo })));
+      picker.innerHTML = opts.map(o => {
+        const active = (o.id || null) === _activeChannel;
+        const color = o.color ? ` style="--channel-color:${o.color}"` : '';
+        const icon = o.logo ? `<span class="channel-logo">${o.logo}</span>` : '';
+        return `<button type="button" class="channel-pick-btn" data-channel="${o.id || ''}"${color} `
+          + `aria-pressed="${active}" title="${escapeHtml(o.label)}">`
+          + `${icon}<span class="channel-name">${escapeHtml(o.label)}</span></button>`;
+      }).join('');
+      picker.querySelectorAll('.channel-pick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          _activeChannel = btn.dataset.channel || null;
+          picker.querySelectorAll('.channel-pick-btn').forEach(b =>
+            b.setAttribute('aria-pressed', (b.dataset.channel || null) === (_activeChannel || null) ? 'true' : 'false'));
+          syncCommand(mod);
+        });
+      });
     }
 
     // Rendert das Modus-Control für die aktive CLI; setzt _activeTier auf den
@@ -10482,10 +10565,12 @@
             picker.querySelectorAll('.cli-pick-btn').forEach(b =>
               b.setAttribute('aria-pressed', b.dataset.cli === _activeCli ? 'true' : 'false'));
             renderModus(mod);
+            renderChannelPicker(mod);
           });
         });
       }
       renderModus(mod);
+      renderChannelPicker(mod);
     }
 
     // Verzeichnis-Tab-Switch (Browse ⇄ Zuletzt). Browse ist Default.
@@ -10565,6 +10650,7 @@
     function openNewSessionModal(prefillPath = null) {
       document.getElementById('new-session-modal').classList.add('open');
       document.getElementById('new-session-name').value = '';
+      _activeChannel = null;   // per-session opt-in; jede Öffnung startet ohne Channel
       renderCliPicker();
       setDirTab('browse');
       document.getElementById('tree-selected').textContent = prefillPath || '~';

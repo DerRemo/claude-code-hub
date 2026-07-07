@@ -266,6 +266,10 @@ window.__I18N_BUNDLES.en = {
   'modal.newSession.modeStandardSub': 'asks first',
   'modal.newSession.modeAutoSub': 'mostly autonomous',
   'modal.newSession.modeDangerSub': 'skip all',
+  'modal.newSession.channelLabel': 'Channel',
+  'modal.newSession.channelNone': 'None',
+  'modal.newSession.channelHint': 'Bridges this session to the provider. Requires the channel plugin installed and configured.',
+  'modal.newSession.channelHintLink': 'Setup guide',
   'modal.newSession.cancel': 'Cancel',
   'modal.newSession.start': 'Start',
 

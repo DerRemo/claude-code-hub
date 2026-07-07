@@ -266,6 +266,10 @@ window.__I18N_BUNDLES.de = {
   'modal.newSession.modeStandardSub': 'fragt nach',
   'modal.newSession.modeAutoSub': 'meist autonom',
   'modal.newSession.modeDangerSub': 'überspringt alles',
+  'modal.newSession.channelLabel': 'Kanal',
+  'modal.newSession.channelNone': 'Kein',
+  'modal.newSession.channelHint': 'Verbindet diese Session mit dem Anbieter. Erfordert das installierte und konfigurierte Channel-Plugin.',
+  'modal.newSession.channelHintLink': 'Anleitung',
   'modal.newSession.cancel': 'Abbrechen',
   'modal.newSession.start': 'Starten',
 
