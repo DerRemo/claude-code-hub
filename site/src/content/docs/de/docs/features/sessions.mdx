@@ -20,6 +20,7 @@ Das Dashboard ist der einzige Ort, um alle laufenden Agents im Blick zu haben un
 - **Multi-CLI:** Der Picker bietet Claude Code, Codex (`--sandbox`-Varianten), Antigravity (`agy`) und opencode, jede CLI mit eigenem Login.
 - **Umbenennen / adoptieren / anpinnen / stummschalten:** Umbenennen behält den Hook-State; *adoptieren* registriert eine fremde Session unter ihrem Originalnamen; *anpinnen* sortiert sie nach oben; *stummschalten* unterdrückt ihre Benachrichtigungen.
 - **Auto-Restore:** Nach einem Neustart startet der Hub die zuletzt laufenden `cc-`-Sessions in ihrem ursprünglichen Verzeichnis neu und setzt die CLI-Konversation fort (`claude --continue`, `codex resume --last`, `agy --continue`). Opt-out durch bewusstes Stoppen der Session.
+- **Copy/Paste in der installierten iOS-PWA:** Die Touch-Bar über der Tastatur bietet zusätzliche **Paste**- und **Copy**-Tasten, da es kein Hardware-Cmd+C/V gibt und der tmux-Mouse-Mode die normale Textauswahl blockiert. **Paste** tippen fügt die Zwischenablage als Bracketed Paste ein. Zum Kopieren: lange drücken, dann ziehen, um Text zu markieren (ein Swipe ohne langes Drücken scrollt weiterhin); beim Loslassen wird die Auswahl übernommen, danach **Copy** tippen.
 
 ![Das Penates Session-Dashboard](../../../../../assets/screenshots/sessions.png)
 
