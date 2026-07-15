@@ -17,6 +17,7 @@ The dashboard is the single place to see and steer every running agent: live act
 
 - **Create:** click **New session**, pick a CLI and an approval/sandbox variant, choose a directory, and start. Names are auto-prefixed `cc-`.
 - **Attach:** open any card to drop into its terminal over a resilient WebSocket (auto-reconnect with backoff; scrollback replay on fresh connect).
+- **Copy/paste on the iOS PWA:** the touch-bar adds dedicated **Copy** and **Paste** keys, since there's no hardware shortcut and tmux mouse-mode blocks normal text selection. Paste reads the clipboard on tap; long-press then drag selects text (a swipe still scrolls), and Copy grabs that selection from the tmux buffer. Copy needs tmux to see the drag, so it works at a shell prompt — full-screen CLIs like Claude Code or Codex capture the mouse themselves.
 - **Multi-CLI:** the picker offers Claude Code, Codex (`--sandbox` variants), Antigravity (`agy`), and opencode, each with its own login.
 - **Rename / adopt / pin / mute:** rename keeps the hook state attached; *adopt* registers a foreign session under its original name; *pin* sorts it to the top; *mute* silences its notifications.
 - **Auto-restore:** after a reboot the hub re-spawns the last running `cc-` sessions in their original directory, continuing the CLI conversation (`claude --continue`, `codex resume --last`, `agy --continue`). Opt out per session by stopping it deliberately.
