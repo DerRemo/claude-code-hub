@@ -20,6 +20,7 @@ The dashboard is the single place to see and steer every running agent: live act
 - **Multi-CLI:** the picker offers Claude Code, Codex (`--sandbox` variants), Antigravity (`agy`), and opencode, each with its own login.
 - **Rename / adopt / pin / mute:** rename keeps the hook state attached; *adopt* registers a foreign session under its original name; *pin* sorts it to the top; *mute* silences its notifications.
 - **Auto-restore:** after a reboot the hub re-spawns the last running `cc-` sessions in their original directory, continuing the CLI conversation (`claude --continue`, `codex resume --last`, `agy --continue`). Opt out per session by stopping it deliberately.
+- **Copy/paste on the iOS PWA:** the touch-bar above the keyboard adds Copy and Paste keys, since tmux mouse-mode blocks native text selection and there is no hardware Cmd+C/V. Paste reads the clipboard on tap; long-press then drag selects text (a normal swipe still scrolls), and the selection copies on the next Copy tap.
 
 ![The Penates session dashboard](../../../../assets/screenshots/sessions.png)
 
