@@ -12,7 +12,7 @@ The Settings view is the central place to configure how Penates looks and behave
 **Settings** covers eight sections:
 
 - **Appearance:** theme (Catppuccin Latte, Frappé, Macchiato, Mocha) and UI language (English or German).
-- **Terminal:** font size, scrollback lines, mouse mode (`TMUX_MOUSE`), and copy-on-select.
+- **Terminal:** font size, scrollback lines, mouse mode (`TMUX_MOUSE`), copy-on-select, and (macOS only) whether ⌥ Option acts as Meta.
 - **Notifications:** web push subscription control.
 - **Behavior:** start view and other UX preferences.
 - **Session restore:** two toggles control auto-restore after a reboot. The first enables or disables the feature; the second controls whether `--continue` is passed to the CLI (to resume the last conversation). Both take effect on the next hub boot.
@@ -40,6 +40,8 @@ For instructions on updating Penates from the command line, see [Updating](/docs
 **Open Settings:** click the gear icon in the sidebar.
 
 **Change theme or language:** pick a value from the dropdown in the Appearance section. The change takes effect immediately.
+
+**macOS: ⌥ as Meta:** off by default, so Option types the layout characters non-US keyboards put behind it (German: `@` = Option+L, plus `|` `\` `{` `}` `[` `]` `~`). Turn it on to send Meta shortcuts instead (⌥B/⌥F word navigation) — the readline-style tradeoff. Applies live to the running terminal.
 
 **Toggle session restore:** in the Session restore section, switch **Auto-restore** on or off. If auto-restore is on, the **Continue conversation** toggle controls whether `--continue` (or the equivalent for Codex/Antigravity) is passed. Both toggles take effect on the next boot.
 
