@@ -20,9 +20,10 @@ Das Dashboard ist der einzige Ort, um alle laufenden Agents im Blick zu haben un
 - **Multi-CLI:** Der Picker bietet Claude Code, Codex (`--sandbox`-Varianten), Antigravity (`agy`) und opencode, jede CLI mit eigenem Login.
 - **Umbenennen / adoptieren / anpinnen / stummschalten:** Umbenennen behält den Hook-State; *adoptieren* registriert eine fremde Session unter ihrem Originalnamen; *anpinnen* sortiert sie nach oben; *stummschalten* unterdrückt ihre Benachrichtigungen.
 - **Auto-Restore:** Nach einem Neustart startet der Hub die zuletzt laufenden `cc-`-Sessions in ihrem ursprünglichen Verzeichnis neu und setzt die CLI-Konversation fort (`claude --continue`, `codex resume --last`, `agy --continue`). Opt-out durch bewusstes Stoppen der Session.
+- **Copy/Paste in der iOS-PWA:** Die Touch-Bar bringt die Tasten **Paste** und **Copy** mit, weil der tmux-Mouse-Mode native Textauswahl blockiert. **Paste** liest beim Tap die Zwischenablage und sendet sie per Bracketed Paste. **Copy** aktiviert den Auswahlmodus: Long-Press und dann über das Terminal ziehen wählt Text aus (wird als Mouse-Events an tmux weitergereicht, ein normaler Swipe scrollt weiterhin), ein erneuter Tap auf **Copy** kopiert die Auswahl. Die Auswahl braucht tmux als Empfänger des Drags, funktioniert also am Shell-Prompt; Vollbild-CLIs (Claude Code, Codex) fangen die Maus selbst ab.
 
 ![Das Penates Session-Dashboard](../../../../../assets/screenshots/sessions.png)
 
 ## Grenzen
 
-Auto-Restore gilt nur nach einem Neustart und stellt die CLI-Konversation wieder her, keinen unterbrochenen Task und keinen im RAM gespeicherten tmux-Scrollback. Fremde (nicht über den Hub gestartete) Sessions zeigen Aktivität `unknown`, bis ein Hook feuert. Die `@`-Mention-Helfer (Image-Paste, Voice) sind Claude-Code-spezifisch.
+Auto-Restore gilt nur nach einem Neustart und stellt die CLI-Konversation wieder her, keinen unterbrochenen Task und keinen im RAM gespeicherten tmux-Scrollback. Fremde (nicht über den Hub gestartete) Sessions zeigen Aktivität `unknown`, bis ein Hook feuert. Die `@`-Mention-Helfer (Image-Paste, Voice) sind Claude-Code-spezifisch. Touch-Bar-Copy funktioniert nur dort, wo tmux selbst den Drag sieht (am Shell-Prompt), nicht innerhalb einer Vollbild-CLI.
