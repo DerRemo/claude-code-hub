@@ -20,9 +20,10 @@ The dashboard is the single place to see and steer every running agent: live act
 - **Multi-CLI:** the picker offers Claude Code, Codex (`--sandbox` variants), Antigravity (`agy`), and opencode, each with its own login.
 - **Rename / adopt / pin / mute:** rename keeps the hook state attached; *adopt* registers a foreign session under its original name; *pin* sorts it to the top; *mute* silences its notifications.
 - **Auto-restore:** after a reboot the hub re-spawns the last running `cc-` sessions in their original directory, continuing the CLI conversation (`claude --continue`, `codex resume --last`, `agy --continue`). Opt out per session by stopping it deliberately.
+- **Copy / paste on the iOS PWA:** with the software keyboard open, a touch-bar above it adds **Paste** and **Copy** keys. Paste reads the clipboard on tap (iOS shows its own paste prompt) and injects it with bracketed-paste. Copy: long-press then drag to select text (forwarded to tmux as mouse events, so a normal swipe still scrolls); on release the selection is copied on the next tap of **Copy**.
 
 ![The Penates session dashboard](../../../../assets/screenshots/sessions.png)
 
 ## Limits
 
-Auto-restore is reboot-only and brings back the CLI conversation, not an interrupted task or the in-RAM tmux scrollback. Foreign (non-hub) sessions show activity `unknown` until a hook fires. The `@`-mention helpers (image paste, voice) are Claude-Code-specific.
+Auto-restore is reboot-only and brings back the CLI conversation, not an interrupted task or the in-RAM tmux scrollback. Foreign (non-hub) sessions show activity `unknown` until a hook fires. The `@`-mention helpers (image paste, voice) are Claude-Code-specific. Touch-bar Copy needs tmux to receive the drag, so it works at a shell prompt; full-screen CLIs (Claude Code, Codex) capture the mouse themselves and cannot be text-selected this way.
