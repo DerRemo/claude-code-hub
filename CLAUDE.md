@@ -210,7 +210,7 @@ Routen: `POST /api/hooks/statusline`, `GET /api/usage/limits` (account-level via
 
 `public/clis.js` ist die einzige Registry der unterstützten Coding-CLIs: `CLIS` (id, label, binary, color, variants) + `cliFromCommand(cmd)`. Browser (`import('./clis.js')`) und `node:test` nutzen dieselbe Datei.
 
-- **New-Session-Modal:** CLI-Picker (Icon je CLI) + Varianten-`<select>` (id `new-session-cmd` → `createSession` unverändert). Varianten decken Approval-Stufen ab (z. B. codex `--sandbox workspace-write --ask-for-approval on-request` / `--dangerously-bypass-approvals-and-sandbox` — `--full-auto`/`--yolo` sind ab codex 0.135 entfernt bzw. nur noch verstecktes Alias, antigravity `agy` / `agy --dangerously-skip-permissions`).
+- **New-Session-Modal:** CLI-Picker (Icon je CLI) + Varianten-`<select>` (id `new-session-cmd` → `createSession` unverändert). Varianten decken Approval-Stufen ab (z. B. codex `--sandbox workspace-write --ask-for-approval on-request` / `--dangerously-bypass-approvals-and-sandbox` — `--full-auto`/`--yolo` sind ab codex 0.135 entfernt bzw. nur noch verstecktes Alias, antigravity `agy` / `agy --dangerously-skip-permissions`, opencode `opencode` / `opencode --auto` — `--auto` ist seit opencode 1.17.12 ein public TUI-Flag „auto-approve permissions that are not explicitly denied"; der harte Bypass `--yolo`/`--dangerously-skip-permissions` bleibt versteckt und wird nicht angeboten).
 - **Session-Card:** CLI-Badge via `cliFromCommand(s.command)` (auf running/dormant/foreign Cards; `GET /api/sessions` reicht `command` mit).
 - Auth out-of-scope: jede CLI nutzt ihren eigenen Login; fehlende CLI → Session stirbt mit „nicht im PATH"-Hinweis.
 

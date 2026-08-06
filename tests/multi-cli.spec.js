@@ -24,11 +24,11 @@ test.describe('multi-CLI picker', () => {
     await expect(modus.locator('.modus-btn[data-tier="safe"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#new-session-cmd')).toHaveValue('agy');
 
-    // Switch to opencode → single Standard tier (safe), command "opencode"
+    // Switch to opencode → Standard (safe) + Auto (--auto); default = auto tier
     await picker.locator('.cli-pick-btn[data-cli="opencode"]').click();
-    await expect(modus.locator('.modus-btn')).toHaveCount(1, { timeout: 5_000 });
-    await expect(modus.locator('.modus-btn[data-tier="safe"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#new-session-cmd')).toHaveValue('opencode');
+    await expect(modus.locator('.modus-btn')).toHaveCount(2, { timeout: 5_000 });
+    await expect(modus.locator('.modus-btn[data-tier="auto"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#new-session-cmd')).toHaveValue('opencode --auto');
 
     await page.keyboard.press('Escape');
   });

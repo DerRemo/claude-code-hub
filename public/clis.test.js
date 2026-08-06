@@ -56,15 +56,15 @@ test('claude logo is the Claude sunburst, not the Anthropic A', () => {
 });
 
 // Task 1: tier field on variants
-test('every variant carries a tier; first is safe, last is danger (or safe-only)', () => {
+test('every variant carries a tier; first is safe, tiers ascend safe→auto→danger', () => {
+  const RANK = { safe: 0, auto: 1, danger: 2 };
   for (const c of CLIS) {
     const tiers = c.variants.map(v => v.tier);
-    assert.ok(tiers.every(Boolean), `${c.id}: every variant has a tier`);
+    assert.ok(tiers.every(t => t in RANK), `${c.id}: every variant has a known tier`);
     assert.equal(tiers[0], 'safe', `${c.id}: first variant is safe`);
-    if (c.variants.length === 1) {
-      assert.equal(tiers[0], 'safe', `${c.id}: single variant is safe`);
-    } else {
-      assert.equal(tiers[tiers.length - 1], 'danger', `${c.id}: last variant is danger`);
+    // Ascending, strictly increasing rank → no dup tiers, no danger-before-auto.
+    for (let i = 1; i < tiers.length; i++) {
+      assert.ok(RANK[tiers[i]] > RANK[tiers[i - 1]], `${c.id}: tiers ascend (${tiers[i - 1]} → ${tiers[i]})`);
     }
   }
 });
@@ -90,12 +90,13 @@ test('antigravity has no auto tier (safe + danger only)', () => {
   assert.deepEqual(agy.variants.map(v => v.tier), ['safe', 'danger']);
 });
 
-test('opencode has a single safe Standard variant = "opencode"', () => {
+test('opencode exposes Standard (safe) + Auto (--auto) variants', () => {
   const oc = CLIS.find(c => c.id === 'opencode');
   assert.ok(oc, 'opencode is registered');
   assert.equal(oc.binary, 'opencode');
-  assert.deepEqual(oc.variants.map(v => v.tier), ['safe']);
+  assert.deepEqual(oc.variants.map(v => v.tier), ['safe', 'auto']);
   assert.equal(oc.variants[0].command, 'opencode');
+  assert.equal(oc.variants[1].command, 'opencode --auto');
 });
 
 // Task 2: defaultVariant + variantByTier helpers
@@ -105,7 +106,7 @@ test('defaultVariant prefers the auto tier, else the first variant', () => {
   assert.equal(defaultVariant('claude').command, 'claude --permission-mode auto');
   assert.equal(defaultVariant('codex').command, 'codex --sandbox workspace-write --ask-for-approval on-request');
   assert.equal(defaultVariant('antigravity').command, 'agy');      // no auto → first (safe)
-  assert.equal(defaultVariant('opencode').command, 'opencode');   // no auto → first (safe)
+  assert.equal(defaultVariant('opencode').command, 'opencode --auto');
   assert.equal(defaultVariant('nope'), null);
 });
 
@@ -114,6 +115,7 @@ test('variantByTier returns the matching variant or null', () => {
   assert.equal(variantByTier('antigravity', 'auto'), null);        // no such tier
   assert.equal(variantByTier('nope', 'safe'), null);
   assert.equal(variantByTier('opencode', 'safe').command, 'opencode');
+  assert.equal(variantByTier('opencode', 'auto').command, 'opencode --auto');
   assert.equal(variantByTier('opencode', 'danger'), null);        // no such tier
 });
 

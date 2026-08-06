@@ -33,15 +33,19 @@ export const CLIS = [
     ],
   },
   {
-    // Registry-only (Parität codex/antigravity): nur „Standard" = blankes
-    // `opencode` (Build-Agent). Kein auto/danger — das opencode-TUI hat kein
-    // Permission-Bypass-Flag (--dangerously-skip-permissions ist `run`-only);
-    // der Plan-Agent ist im TUI live per Tab umschaltbar. Logo monochrom
-    // (currentColor), opencodes Marke ist Graustufen.
+    // Registry-only (Parität codex/antigravity): „Standard" = blankes `opencode`
+    // (Build-Agent) + „Auto" = `opencode --auto`. `--auto` ist seit opencode
+    // 1.17.12 ein *public* TUI-Flag („auto-approve permissions that are not
+    // explicitly denied") → 'auto'-Tier, damit defaultVariant('opencode') wie
+    // die anderen CLIs auf Auto fällt. Kein 'danger'-Tier: der harte Bypass ist
+    // nur über die versteckten Flags --yolo/--dangerously-skip-permissions
+    // erreichbar (bewusst nicht angeboten). Logo monochrom (currentColor),
+    // opencodes Marke ist Graustufen.
     id: 'opencode', label: 'opencode', binary: 'opencode', color: '#7c7575',
     logo: '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3 6.5A3.5 3.5 0 0 1 6.5 3h11A3.5 3.5 0 0 1 21 6.5v11a3.5 3.5 0 0 1-3.5 3.5h-11A3.5 3.5 0 0 1 3 17.5v-11Zm5.5 1A1.5 1.5 0 0 0 7 9v6a1.5 1.5 0 0 0 1.5 1.5h7A1.5 1.5 0 0 0 17 15V9a1.5 1.5 0 0 0-1.5-1.5h-7Z"/></svg>',
     variants: [
       { label: 'Standard', command: 'opencode', tier: 'safe' },
+      { label: 'Auto', command: 'opencode --auto', tier: 'auto' },
     ],
   },
 ];
