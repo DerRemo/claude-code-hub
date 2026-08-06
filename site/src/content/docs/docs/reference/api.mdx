@@ -44,6 +44,7 @@ The server echoes the subprotocol back in the handshake response. A legacy `?tok
 | GET | `/api/sessions/:name/git/commit/:sha` | Header and per-file diffs for a single commit. |
 | GET | `/api/sessions/:name/file-content` | Read a file by path for clickable terminal path previews. |
 | GET | `/api/sessions/:name/scrollback` | Capture tmux scrollback history. Accepts `?lines=N`. |
+| GET | `/api/sessions/:name/tmux-buffer` | Read the most recent tmux paste buffer (used by the iOS PWA touch-bar Copy button). |
 | POST | `/api/sessions/:name/upload` | Upload files into the session working directory (multipart/form-data via Busboy). |
 | POST | `/api/sessions/:name/image` | Upload a single PNG (raw `image/png`, max 8 MB) into `.penates-images/`. Returns `{ rel }`. |
 | POST | `/api/sessions/:name/mata-capture` | Capture the current iOS Simulator frame and save it as a session image. Returns `{ rel }`. |
