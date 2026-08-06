@@ -12,7 +12,7 @@ Die Settings-Ansicht ist der zentrale Ort, um das Aussehen und Verhalten von Pen
 **Einstellungen** umfassen acht Bereiche:
 
 - **Erscheinungsbild:** Theme (Catppuccin Latte, Frappé, Macchiato, Mocha) und UI-Sprache (Englisch oder Deutsch).
-- **Terminal:** Schriftgröße, Scrollback-Zeilen, Mouse-Mode (`TMUX_MOUSE`) und Copy-on-Select.
+- **Terminal:** Schriftgröße, Scrollback-Zeilen, Mouse-Mode (`TMUX_MOUSE`), Copy-on-Select und (macOS) ob ⌥ als Meta wirkt.
 - **Notifications:** Steuerung des Web-Push-Abonnements.
 - **Behavior:** Startansicht und weitere UX-Einstellungen.
 - **Session-Wiederherstellung:** Zwei Schalter steuern das automatische Wiederherstellen nach einem Neustart. Der erste aktiviert oder deaktiviert das Feature; der zweite legt fest, ob `--continue` an die CLI übergeben wird, um die letzte Konversation fortzusetzen. Beide Schalter gelten ab dem nächsten Hub-Start.
@@ -42,6 +42,8 @@ Anleitung zur Aktualisierung von Penates über die Befehlszeile: [Aktualisieren]
 **Theme oder Sprache ändern:** Im Bereich Erscheinungsbild einen Wert aus dem Dropdown wählen. Die Änderung tritt sofort in Kraft.
 
 **Session-Wiederherstellung umschalten:** Im Bereich Session-Wiederherstellung **Auto-Restore** ein- oder ausschalten. Ist Auto-Restore aktiv, steuert der Schalter **Konversation fortsetzen**, ob `--continue` (bzw. das Äquivalent für Codex/Antigravity) übergeben wird. Beide Schalter gelten ab dem nächsten Start.
+
+**macOS: ⌥ als Meta:** Standardmäßig aus, damit die Wahltaste native Zeichen tippt (`@ | { } [ ] ~` auf europäischen Tastaturlayouts); einschalten, damit Option stattdessen Meta-Kürzel sendet (⌥B/⌥F für Wort-Navigation in readline). Wirkt sofort auf das laufende Terminal.
 
 **Server neu starten:** Im Bereich Server & Features auf **Neu starten** klicken. Der Hub-Prozess startet über den OS-Service-Manager neu (LaunchAgent auf macOS, systemd auf Linux). Der Browser verbindet sich automatisch wieder.
 
